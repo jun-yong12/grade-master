@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('성적표')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+<div class="container">
+    <div class="toolbar">
+        <form method="get" th:action="@{/students/{id}/report(id=${report.studentId})}" class="search-form">
+            <label>학기:</label>
+            <select name="semester" class="form-input" onchange="this.form.submit()">
+                <option value="2024-1" th:selected="${semester=='2024-1'}">2024-1학기</option>
+                <option value="2024-2" th:selected="${semester=='2024-2'}">2024-2학기</option>
+                <option value="2025-1" th:selected="${semester=='2025-1'}">2025-1학기</option>
+                <option value="2025-2" th:selected="${semester=='2025-2'}">2025-2학기</option>
+            </select>
+        </form>
+        <div class="toolbar-right">
+            <button onclick="window.print()" class="btn btn-primary">🖨️ 인쇄</button>
+            <a th:href="@{/students/{id}(id=${report.studentId})}" class="btn btn-secondary">← 뒤로</a>
+        </div>
+    </div>
+
+    <div class="card report-card" id="printArea">
+        <div class="report-title">
+            <h2>학생 성적표</h2>
+            <p th:text="${report.semester} + ' 학기'"></p>
+        </div>
+
+        <table class="info-table">
+            <tr>
+                <th>학번</th><td th:text="${report.studentNumber}"></td>
+                <th>이름</th><td th:text="${report.name}"></td>
+            </tr>
+            <tr>
+                <th>학년</th><td th:text="${report.grade}"></td>
+                <th>과</th><td th:text="${report.department}"></td>
+            </tr>
+        </table>
+
+        <table class="table report-table">
+            <thead>
+            <tr><th>과목</th><th>점수</th><th>등급</th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(report.grades)}">
+                <td colspan="3" class="empty-msg">이 학기 성적이 없습니다.</td>
+            </tr>
+            <tr th:each="g : ${report.grades}">
+                <td th:text="${g.subject}"></td>
+                <td>
+                    <div class="score-bar-wrap">
+                        <div class="score-bar" th:style="'width:' + ${g.score} + '%'"></div>
+                        <span th:text="${g.score}"></span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${g.letterGrade=='A'?'badge-a':(g.letterGrade=='B'?'badge-b':(g.letterGrade=='C'?'badge-c':'badge-f'))}"
+                          th:text="${g.letterGrade}"></span>
+                </td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr class="summary-row">
+                <td><strong>평균</strong></td>
+                <td><strong th:text="${#numbers.formatDecimal(report.average,1,1)}"></strong></td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${report.letterGrade=='A'?'badge-a':(report.letterGrade=='B'?'badge-b':(report.letterGrade=='C'?'badge-c':'badge-f'))}"
+                          th:text="${report.letterGrade}"></span>
+                </td>
+            </tr>
+            </tfoot>
+        </table>
+
+        <div class="rank-section">
+            <div class="rank-box">
+                <span class="rank-number" th:text="${report.rank}"></span>
+                <span class="rank-label">등</span>
+                <span class="rank-sub">(반 기준)</span>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

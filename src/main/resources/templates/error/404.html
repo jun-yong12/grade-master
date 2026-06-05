@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('404 Not Found')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+<div class="container" style="text-align:center; padding-top: 80px;">
+    <h1 style="font-size: 5rem; color: #4f46e5;">404</h1>
+    <p style="font-size: 1.2rem; color: #718096; margin: 12px 0;">페이지를 찾을 수 없습니다.</p>
+    <a href="/" class="btn btn-primary">홈으로 돌아가기</a>
+</div>
+</body>
+</html>

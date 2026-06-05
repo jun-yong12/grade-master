@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('담당 과목')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+<div class="container">
+    <div class="toolbar">
+        <h2>담당 과목</h2>
+    </div>
+
+    <div class="card">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>담당 과목</th>
+                <th>과</th>
+                <th>교수님 성함</th>
+                <th>수강 인원</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(subjects)}">
+                <td colspan="4" class="empty-msg">등록된 과목이 없습니다.</td>
+            </tr>
+            <tr th:each="s : ${subjects}">
+                <td><a th:href="@{/subjects/{id}(id=${s.id})}" th:text="${s.subject}" class="student-link"></a></td>
+                <td th:text="${s.department}"></td>
+                <td th:text="${s.professor}"></td>
+                <td th:text="${s.studentCount} + '명'"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

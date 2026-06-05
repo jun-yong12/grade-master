@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' - 학생 성적 관리 시스템'">성적 관리</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+
+<!-- 사이드바 -->
+<aside th:fragment="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+        <a th:href="@{/}" class="brand-link">🎓 성적 관리 시스템</a>
+    </div>
+    <nav class="sidebar-menu">
+        <a th:href="@{/students}" class="nav-link">학생 관리</a>
+        <a th:href="@{/subjects}" class="nav-link">담당 과목</a>
+    </nav>
+    <div class="sidebar-bottom">
+        <a th:href="@{/(lang=ko)}" class="nav-link lang-btn">🇰🇷 한국어</a>
+        <a th:href="@{/(lang=en)}" class="nav-link lang-btn">🇺🇸 English</a>
+        <a th:href="@{/logout}" class="nav-link logout-btn">
+            로그아웃
+            <span th:if="${session.loginUser != null}"
+                  th:text="'(' + ${session.loginUser} + ')'"></span>
+        </a>
+    </div>
+</aside>
+
+<!-- 알림 메시지 fragment -->
+<div th:fragment="alerts">
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+</div>
+
+<!-- 페이징 fragment -->
+<div th:fragment="pagination(page, totalPages, url)">
+    <div class="pagination" th:if="${totalPages > 1}">
+        <a th:if="${page.page > 1}"
+           th:href="${url + '?page=' + (page.page - 1) + (page.keyword != null ? '&keyword=' + page.keyword : '')}"
+           class="page-btn">◀</a>
+        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+            <a th:href="${url + '?page=' + i + (page.keyword != null ? '&keyword=' + page.keyword : '')}"
+               th:text="${i}"
+               th:classappend="${i == page.page} ? 'active'"
+               class="page-btn"></a>
+        </span>
+        <a th:if="${page.page < totalPages}"
+           th:href="${url + '?page=' + (page.page + 1) + (page.keyword != null ? '&keyword=' + page.keyword : '')}"
+           class="page-btn">▶</a>
+    </div>
+</div>

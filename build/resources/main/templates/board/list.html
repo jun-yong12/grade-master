@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('학생 목록')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+<div class="container">
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="toolbar">
+        <h2 th:text="#{student.list}">학생 목록</h2>
+        <div class="toolbar-right">
+            <form method="get" th:action="@{/students}" class="search-form">
+                <select name="searchType" class="form-input form-input-sm">
+                    <option value="name"          th:selected="${page.searchType == 'name'}">이름</option>
+                    <option value="studentNumber" th:selected="${page.searchType == 'studentNumber'}">학번</option>
+                </select>
+                <input type="text" name="keyword" th:value="${page.keyword}"
+                       placeholder="검색어 입력..." class="search-input"/>
+                <button type="submit" class="btn btn-secondary">🔍</button>
+                <a th:href="@{/students}" class="btn btn-secondary">전체</a>
+            </form>
+            <button type="button" class="btn btn-primary" onclick="openStudentModal()">+ 학생 등록</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <table class="table">
+            <thead>
+            <tr>
+                <th><a th:href="@{/students(sortField='student_number', sortDir=${page.sortField == 'student_number' and page.sortDir == 'ASC' ? 'DESC' : 'ASC'}, keyword=${page.keyword})}">학번 ↕</a></th>
+                <th><a th:href="@{/students(sortField='name', sortDir=${page.sortField == 'name' and page.sortDir == 'ASC' ? 'DESC' : 'ASC'}, keyword=${page.keyword})}">이름 ↕</a></th>
+                <th>학년</th>
+                <th>과</th>
+                <th>전화번호</th>
+                <th>이메일</th>
+                <th>상태</th>
+                <th>관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(students)}">
+                <td colspan="8" class="empty-msg">등록된 학생이 없습니다.</td>
+            </tr>
+            <tr th:each="s : ${students}">
+                <td th:text="${s.studentNumber}"></td>
+                <td th:text="${s.name}"></td>
+                <td th:text="${s.grade}"></td>
+                <td th:text="${s.department}"></td>
+                <td th:text="${s.phone}"></td>
+                <td th:text="${s.email}"></td>
+                <td>
+                    <span class="badge" th:classappend="${s.status == '휴학' ? 'badge-f' : 'badge-a'}"
+                          th:text="${s.status}"></span>
+                </td>
+                <td class="actions">
+                    <a th:href="@{/students/{id}/edit(id=${s.id})}" class="btn btn-sm btn-warning">수정</a>
+                    <form th:action="@{/students/{id}/delete(id=${s.id})}" method="post" style="display:inline"
+                          onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                        <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="table-footer">
+            <span class="total-count">총 <strong th:text="${totalCount}"></strong>명</span>
+            <div th:replace="~{fragments/layout :: pagination(${page}, ${totalPages}, '/students')}"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 학생 등록 모달 -->
+<div id="studentModal" class="modal-overlay" onclick="closeStudentModal(event)">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>새 학생 등록</h3>
+            <button type="button" class="modal-close" onclick="closeStudentModal()">✕</button>
+        </div>
+        <form id="studentModalForm" class="form" onsubmit="submitStudentForm(event)">
+            <div class="form-group">
+                <label>학번 <span class="required">*</span></label>
+                <input type="text" name="studentNumber" placeholder="예: 20240001" class="form-input"/>
+                <span class="error-msg" id="err-studentNumber"></span>
+            </div>
+            <div class="form-group">
+                <label>이름 <span class="required">*</span></label>
+                <input type="text" name="name" placeholder="학생 이름" class="form-input"/>
+                <span class="error-msg" id="err-name"></span>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>학년</label>
+                    <select name="grade" class="form-input">
+                        <option value="">-- 선택 --</option>
+                        <option value="1학년">1학년</option>
+                        <option value="2학년">2학년</option>
+                        <option value="3학년">3학년</option>
+                        <option value="4학년">4학년</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>과</label>
+                    <input type="text" name="department" placeholder="예: 컴퓨터공학과" class="form-input"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>전화번호</label>
+                <input type="tel" name="phone" placeholder="예: 010-1234-5678" class="form-input"/>
+            </div>
+            <div class="form-group">
+                <label>이메일</label>
+                <input type="email" name="email" placeholder="example@school.kr" class="form-input"/>
+            </div>
+            <div class="form-group">
+                <label>상태</label>
+                <select name="status" class="form-input">
+                    <option value="재학">재학</option>
+                    <option value="휴학">휴학</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeStudentModal()">취소</button>
+                <button type="submit" class="btn btn-primary">등록하기</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+<script>
+function openStudentModal() {
+    document.getElementById('studentModalForm').reset();
+    document.querySelectorAll('.error-msg[id^="err-"]').forEach(el => el.textContent = '');
+    document.querySelectorAll('.form-input.input-error').forEach(el => el.classList.remove('input-error'));
+    document.getElementById('studentModal').classList.add('active');
+}
+
+function closeStudentModal(event) {
+    if (event && event.target !== document.getElementById('studentModal')) return;
+    document.getElementById('studentModal').classList.remove('active');
+}
+
+async function submitStudentForm(event) {
+    event.preventDefault();
+    const form = event.target;
+    const data = new URLSearchParams(new FormData(form));
+
+    document.querySelectorAll('.error-msg[id^="err-"]').forEach(el => el.textContent = '');
+    document.querySelectorAll('.form-input.input-error').forEach(el => el.classList.remove('input-error'));
+
+    const res = await fetch('/students/create', { method: 'POST', body: data });
+    const json = await res.json();
+
+    if (json.success) {
+        location.reload();
+    } else {
+        Object.entries(json.errors || {}).forEach(([field, msg]) => {
+            const errEl = document.getElementById('err-' + field);
+            if (errEl) errEl.textContent = msg;
+            const input = form.querySelector('[name="' + field + '"]');
+            if (input) input.classList.add('input-error');
+        });
+    }
+}
+</script>
+</body>
+</html>

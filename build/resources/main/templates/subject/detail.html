@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('성적 관리')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+<div class="container">
+
+    <!-- 과목 헤더 -->
+    <div class="toolbar">
+        <div>
+            <h2 th:text="${subject.subject}"></h2>
+            <p class="student-meta" style="margin-top:4px">
+                <span th:text="${subject.department}"></span> ·
+                <span th:text="${subject.professor} + ' 교수'"></span>
+            </p>
+        </div>
+        <a th:href="@{/subjects}" class="btn btn-secondary">← 목록</a>
+    </div>
+
+    <!-- 배점 설정 -->
+    <div class="card" style="margin-bottom:16px">
+        <h3 style="margin-bottom:16px">⚖️ 배점 설정</h3>
+        <div class="form-row" style="align-items:flex-end;gap:12px">
+            <div class="form-group" style="margin:0">
+                <label>출결 (%)</label>
+                <input id="w-attendance" type="number" min="0" max="100"
+                       th:value="${weights.attendanceWeight}" class="form-input" style="width:90px" oninput="onWeightChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>중간고사 (%)</label>
+                <input id="w-midterm" type="number" min="0" max="100"
+                       th:value="${weights.midtermWeight}" class="form-input" style="width:90px" oninput="onWeightChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>기말고사 (%)</label>
+                <input id="w-final" type="number" min="0" max="100"
+                       th:value="${weights.finalWeight}" class="form-input" style="width:90px" oninput="onWeightChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>과제 (%)</label>
+                <input id="w-assignment" type="number" min="0" max="100"
+                       th:value="${weights.assignmentWeight}" class="form-input" style="width:90px" oninput="onWeightChange()"/>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding-bottom:1px">
+                <span id="weight-sum-label" style="font-size:.85rem;color:#718096"></span>
+                <button type="button" class="btn btn-primary" onclick="saveWeights()">배점 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 성적 테이블 -->
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0">📋 학생 성적</h3>
+            <button type="button" class="btn btn-primary" onclick="saveGrades()">전체 저장</button>
+        </div>
+        <table class="table" id="grade-table">
+            <thead>
+            <tr>
+                <th>학번</th>
+                <th>이름</th>
+                <th>상태</th>
+                <th id="th-attendance">출결</th>
+                <th id="th-midterm">중간고사</th>
+                <th id="th-final">기말고사</th>
+                <th id="th-assignment">과제</th>
+                <th>합계</th>
+                <th>학점</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(grades)}">
+                <td colspan="9" class="empty-msg">해당 과에 등록된 학생이 없습니다.</td>
+            </tr>
+            <tr th:each="g : ${grades}" th:data-student-id="${g.studentId}">
+                <td th:text="${g.studentNumber}"></td>
+                <td th:text="${g.name}"></td>
+                <td>
+                    <span class="badge" th:classappend="${g.status == '휴학' ? 'badge-f' : 'badge-a'}"
+                          th:text="${g.status}"></span>
+                </td>
+                <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="attendance"
+                           th:value="${g.attendanceScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="midterm"
+                           th:value="${g.midtermScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="final"
+                           th:value="${g.finalScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="assignment"
+                           th:value="${g.assignmentScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                <td class="total-cell" style="font-weight:600">-</td>
+                <td><span class="badge grade-badge">-</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const SUBJECT_ID = [[${subject.id}]];
+
+    function getWeights() {
+        return {
+            attendance:  parseInt(document.getElementById('w-attendance').value)  || 0,
+            midterm:     parseInt(document.getElementById('w-midterm').value)     || 0,
+            final:       parseInt(document.getElementById('w-final').value)       || 0,
+            assignment:  parseInt(document.getElementById('w-assignment').value)  || 0,
+        };
+    }
+
+    function onWeightChange() {
+        const w = getWeights();
+        const sum = w.attendance + w.midterm + w.final + w.assignment;
+        const label = document.getElementById('weight-sum-label');
+        label.textContent = '합계: ' + sum + '%';
+        label.style.color = sum === 100 ? '#38a169' : '#e53e3e';
+
+        // 헤더 업데이트
+        document.getElementById('th-attendance').textContent = '출결 (' + w.attendance + '%)';
+        document.getElementById('th-midterm').textContent    = '중간고사 (' + w.midterm + '%)';
+        document.getElementById('th-final').textContent      = '기말고사 (' + w.final + '%)';
+        document.getElementById('th-assignment').textContent = '과제 (' + w.assignment + '%)';
+
+        document.querySelectorAll('#grade-table tbody tr[data-student-id]').forEach(recalcRow);
+    }
+
+    function recalcRow(row) {
+        const w = getWeights();
+        const get = (field) => parseFloat(row.querySelector('[data-field="' + field + '"]').value) || 0;
+        const total = get('attendance') * w.attendance / 100
+                    + get('midterm')    * w.midterm    / 100
+                    + get('final')      * w.final      / 100
+                    + get('assignment') * w.assignment  / 100;
+        const hasAny = ['attendance','midterm','final','assignment']
+            .some(f => row.querySelector('[data-field="' + f + '"]').value !== '');
+
+        row.querySelector('.total-cell').textContent = hasAny ? total.toFixed(1) : '-';
+        const badge = row.querySelector('.grade-badge');
+        badge.textContent = hasAny ? letterGrade(total) : '-';
+        badge.className = 'badge grade-badge ' + gradeBadgeClass(total, hasAny);
+    }
+
+    function letterGrade(score) {
+        if (score >= 95) return 'A+';
+        if (score >= 90) return 'A0';
+        if (score >= 85) return 'B+';
+        if (score >= 80) return 'B0';
+        if (score >= 75) return 'C+';
+        if (score >= 70) return 'C0';
+        if (score >= 65) return 'D+';
+        if (score >= 60) return 'D0';
+        return 'F';
+    }
+
+    function gradeBadgeClass(score, hasAny) {
+        if (!hasAny) return '';
+        if (score >= 90) return 'badge-a';
+        if (score >= 80) return 'badge-b';
+        if (score >= 70) return 'badge-c';
+        return 'badge-f';
+    }
+
+    async function saveWeights() {
+        const w = getWeights();
+        const sum = w.attendance + w.midterm + w.final + w.assignment;
+        if (sum !== 100) { alert('배점 합계가 100%여야 합니다. (현재 ' + sum + '%)'); return; }
+        const res = await fetch('/subjects/' + SUBJECT_ID + '/weights', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ attendanceWeight: w.attendance, midtermWeight: w.midterm, finalWeight: w.final, assignmentWeight: w.assignment })
+        });
+        const json = await res.json();
+        alert(json.success ? '배점이 저장되었습니다.' : json.message);
+    }
+
+    async function saveGrades() {
+        const entries = [];
+        document.querySelectorAll('#grade-table tbody tr[data-student-id]').forEach(row => {
+            const get = (field) => {
+                const v = row.querySelector('[data-field="' + field + '"]').value;
+                return v === '' ? null : parseFloat(v);
+            };
+            entries.push({
+                studentId:        parseInt(row.dataset.studentId),
+                attendanceScore:  get('attendance'),
+                midtermScore:     get('midterm'),
+                finalScore:       get('final'),
+                assignmentScore:  get('assignment'),
+            });
+        });
+        const res = await fetch('/subjects/' + SUBJECT_ID + '/grades', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entries)
+        });
+        const json = await res.json();
+        alert(json.success ? '성적이 저장되었습니다.' : '저장 중 오류가 발생했습니다.');
+    }
+
+    // 페이지 로드 시 초기화
+    onWeightChange();
+    document.querySelectorAll('#grade-table tbody tr[data-student-id]').forEach(recalcRow);
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.ac.tukorea.grade.mapper.SubjectMapper">
+
+    <select id="findById" resultType="kr.ac.tukorea.grade.dto.SubjectDTO">
+        SELECT s.id, s.subject, s.department, s.professor,
+               COUNT(st.id) AS student_count
+        FROM subjects s
+        LEFT JOIN students st ON st.department = s.department
+        WHERE s.id = #{id}
+        GROUP BY s.id, s.subject, s.department, s.professor
+    </select>
+
+    <select id="findAll" resultType="kr.ac.tukorea.grade.dto.SubjectDTO">
+        SELECT s.id, s.subject, s.department, s.professor,
+               COUNT(st.id) AS student_count
+        FROM subjects s
+        LEFT JOIN students st ON st.department = s.department
+        GROUP BY s.id, s.subject, s.department, s.professor
+        ORDER BY s.id
+    </select>
+
+</mapper>

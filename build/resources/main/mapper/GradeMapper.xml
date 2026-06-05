@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.ac.tukorea.grade.mapper.GradeMapper">
+
+    <resultMap id="GradeResultMap" type="GradeDTO">
+        <id     property="id"        column="id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="subject"   column="subject"/>
+        <result property="score"     column="score"/>
+        <result property="semester"  column="semester"/>
+    </resultMap>
+
+    <!-- 학생별 전체 성적 -->
+    <select id="findByStudentId" resultMap="GradeResultMap">
+        SELECT * FROM grades WHERE student_id = #{studentId}
+        ORDER BY semester DESC, subject ASC
+    </select>
+
+    <!-- 학생 + 학기별 성적 -->
+    <select id="findByStudentIdAndSemester" resultMap="GradeResultMap">
+        SELECT * FROM grades
+        WHERE student_id = #{studentId} AND semester = #{semester}
+        ORDER BY subject ASC
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="findById" resultMap="GradeResultMap">
+        SELECT * FROM grades WHERE id = #{id}
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO grades (student_id, subject, score, semester)
+        VALUES (#{studentId}, #{subject}, #{score}, #{semester})
+    </insert>
+
+    <!-- 수정 -->
+    <update id="update">
+        UPDATE grades
+        SET subject  = #{subject},
+            score    = #{score},
+            semester = #{semester}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 삭제 -->
+    <delete id="deleteById">
+        DELETE FROM grades WHERE id = #{id}
+    </delete>
+
+    <!-- 학기별 평균 -->
+    <select id="findAverageByStudentIdAndSemester" resultType="Double">
+        SELECT ROUND(AVG(score), 1)
+        FROM grades
+        WHERE student_id = #{studentId} AND semester = #{semester}
+    </select>
+
+</mapper>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('학생 상세')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+<div class="container">
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <!-- 학생 정보 -->
+    <div class="card student-info-card">
+        <div class="student-header">
+            <div>
+                <h2 th:text="${student.name}"></h2>
+                <p class="student-meta">
+                    <span th:text="${student.studentNumber}"></span> |
+                    <span th:text="${student.grade}"></span>
+                    <span th:text="${student.department}"></span>
+                </p>
+                <p class="student-email" th:text="${student.email}"></p>
+            </div>
+            <div class="average-circle">
+                <span class="avg-num" th:text="${student.average != null ? #numbers.formatDecimal(student.average,1,1) : '-'}"></span>
+                <span class="avg-label">평균</span>
+            </div>
+        </div>
+        <div class="student-actions">
+            <a th:href="@{/students}" class="btn btn-secondary">← 목록</a>
+            <a th:href="@{/students/{id}/report(id=${student.id})}" class="btn btn-info">📋 성적표</a>
+            <a th:href="@{/students/{id}/edit(id=${student.id})}"   class="btn btn-warning">✏️ 수정</a>
+        </div>
+    </div>
+
+    <!-- 성적 목록 -->
+    <div class="card">
+        <h3>📊 성적 목록</h3>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>과목</th><th>점수</th><th>등급</th><th>학기</th><th>삭제</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(grades)}">
+                <td colspan="5" class="empty-msg">등록된 성적이 없습니다.</td>
+            </tr>
+            <tr th:each="g : ${grades}">
+                <td th:text="${g.subject}"></td>
+                <td>
+                    <div class="score-bar-wrap">
+                        <div class="score-bar" th:style="'width:' + ${g.score} + '%'"></div>
+                        <span th:text="${g.score}"></span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${g.letterGrade == 'A' ? 'badge-a' : (g.letterGrade == 'B' ? 'badge-b' : (g.letterGrade == 'C' ? 'badge-c' : 'badge-f'))}"
+                          th:text="${g.letterGrade}"></span>
+                </td>
+                <td th:text="${g.semester}"></td>
+                <td>
+                    <form th:action="@{/grades/{gid}/delete(gid=${g.id})}" method="post"
+                          onsubmit="return confirm('성적을 삭제하시겠습니까?')">
+                        <input type="hidden" name="studentId" th:value="${student.id}"/>
+                        <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 성적 등록 폼 -->
+    <div class="card">
+        <h3>➕ 성적 등록</h3>
+        <form th:action="@{/grades}" th:object="${gradeForm}" method="post" class="form">
+            <input type="hidden" th:field="*{studentId}"/>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>과목</label>
+                    <select th:field="*{subject}" class="form-input">
+                        <option value="">-- 과목 선택 --</option>
+                        <option value="국어">국어</option>
+                        <option value="영어">영어</option>
+                        <option value="수학">수학</option>
+                        <option value="과학">과학</option>
+                        <option value="사회">사회</option>
+                        <option value="역사">역사</option>
+                        <option value="체육">체육</option>
+                        <option value="음악">음악</option>
+                        <option value="미술">미술</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>점수 (0~100)</label>
+                    <input type="number" th:field="*{score}" min="0" max="100" class="form-input" placeholder="점수"/>
+                </div>
+                <div class="form-group">
+                    <label>학기</label>
+                    <select th:field="*{semester}" class="form-input">
+                        <option value="2024-1">2024-1학기</option>
+                        <option value="2024-2">2024-2학기</option>
+                        <option value="2025-1">2025-1학기</option>
+                        <option value="2025-2">2025-2학기</option>
+                    </select>
+                </div>
+                <div class="form-group form-group-btn">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">등록</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: grade-management
+
+  # MySQL (로컬 기본)
+  datasource:
+    url: jdbc:mysql://localhost:3306/gradedb?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 6621iris
+
+  # SQL 초기화
+  sql:
+    init:
+      mode: never
+
+  # Thymeleaf
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+
+  # 파일 업로드
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # i18n 메시지
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+# MyBatis 설정
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: kr.ac.tukorea.grade.dto
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Swagger UI
+springdoc:
+  swagger-ui:
+    path: /swagger-ui/index.html
+  api-docs:
+    path: /api-docs
+
+# 파일 업로드 저장 경로
+file:
+  upload-dir: uploads/

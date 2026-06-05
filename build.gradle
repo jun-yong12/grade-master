@@ -1,0 +1,107 @@
+// build.gradle — Spring Boot 프로젝트 빌드 설정
+// Spring Boot 3.5.x + Java 21 + MyBatis + Swagger + JaCoCo
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'com.google.cloud.tools.jib' version '3.4.0'
+}
+
+group = 'kr.ac.tukorea'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot 핵심
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 데이터베이스
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    runtimeOnly 'com.h2database:h2'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Swagger UI (springdoc-openapi)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+    // BCrypt 암호화 (spring-security-crypto만 사용)
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // 엑셀 내보내기
+    implementation 'org.apache.poi:poi-ooxml:5.2.4'
+
+    // 개발 편의
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // 테스트
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/GradeManagementApplication.class',
+                '**/dto/**',
+                '**/config/**',
+                '**/aspect/**',
+            ])
+        }))
+    }
+}
+
+jib {
+    from {
+        image = 'eclipse-temurin:21-jre'
+    }
+    to {
+        image = 'grade-management'
+        tags = ['latest', '1.0']
+    }
+    container {
+        mainClass = 'kr.ac.tukorea.grade.GradeManagementApplication'
+        ports = ['8080']
+        environment = [
+            'SPRING_PROFILES_ACTIVE': 'docker'
+        ]
+        jvmFlags = ['-Xms256m', '-Xmx512m']
+    }
+}

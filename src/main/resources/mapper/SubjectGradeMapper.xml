@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.ac.tukorea.grade.mapper.SubjectGradeMapper">
+
+    <select id="findWeightsBySubject" resultType="SubjectGradeWeightDTO">
+        SELECT subject_id, attendance_weight, midterm_weight, final_weight, assignment_weight
+        FROM subject_grade_weights
+        WHERE subject_id = #{subjectId}
+    </select>
+
+    <insert id="saveOrUpdateWeights">
+        MERGE INTO subject_grade_weights (subject_id, attendance_weight, midterm_weight, final_weight, assignment_weight)
+        KEY (subject_id)
+        VALUES (#{subjectId}, #{attendanceWeight}, #{midtermWeight}, #{finalWeight}, #{assignmentWeight})
+    </insert>
+
+    <select id="findGradesBySubject" resultType="SubjectGradeRowDTO">
+        SELECT st.id        AS student_id,
+               st.student_number,
+               st.name,
+               st.status,
+               sg.attendance_score,
+               sg.midterm_score,
+               sg.final_score,
+               sg.assignment_score
+        FROM students st
+        INNER JOIN subjects sub ON sub.id = #{subjectId}
+        LEFT JOIN subject_grades sg ON sg.student_id = st.id AND sg.subject_id = #{subjectId}
+        WHERE st.department = sub.department
+        ORDER BY st.student_number
+    </select>
+
+    <insert id="saveOrUpdateGrade">
+        MERGE INTO subject_grades (subject_id, student_id, attendance_score, midterm_score, final_score, assignment_score)
+        KEY (subject_id, student_id)
+        VALUES (#{subjectId}, #{entry.studentId}, #{entry.attendanceScore}, #{entry.midtermScore}, #{entry.finalScore}, #{entry.assignmentScore})
+    </insert>
+
+</mapper>
