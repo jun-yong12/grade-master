@@ -1,6 +1,7 @@
 package kr.ac.tukorea.grade.controller;
 
 import kr.ac.tukorea.grade.dto.SubjectGradeEntryDTO;
+import kr.ac.tukorea.grade.dto.SubjectGradeRatioDTO;
 import kr.ac.tukorea.grade.dto.SubjectGradeWeightDTO;
 import kr.ac.tukorea.grade.mapper.SubjectGradeMapper;
 import kr.ac.tukorea.grade.mapper.SubjectMapper;
@@ -33,8 +34,13 @@ public class SubjectController {
         if (weights == null) {
             weights = SubjectGradeWeightDTO.builder().subjectId(id).build();
         }
+        SubjectGradeRatioDTO ratios = subjectGradeMapper.findRatiosBySubject(id);
+        if (ratios == null) {
+            ratios = SubjectGradeRatioDTO.builder().subjectId(id).build();
+        }
         model.addAttribute("subject", subjectMapper.findById(id));
         model.addAttribute("weights", weights);
+        model.addAttribute("ratios", ratios);
         model.addAttribute("grades", subjectGradeMapper.findGradesBySubject(id));
         return "subject/detail";
     }
@@ -46,11 +52,27 @@ public class SubjectController {
             @RequestBody SubjectGradeWeightDTO weights) {
         int total = weights.getAttendanceWeight() + weights.getMidtermWeight()
                   + weights.getFinalWeight() + weights.getAssignmentWeight();
-        if (total != 100) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "배점 합계가 100%여야 합니다. (현재 " + total + "%)"));
+        if (total > 100) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "배점 합계가 100%를 초과할 수 없습니다. (현재 " + total + "%)"));
         }
         weights.setSubjectId(id);
         subjectGradeMapper.saveOrUpdateWeights(weights);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/ratios")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveRatios(
+            @PathVariable Long id,
+            @RequestBody SubjectGradeRatioDTO ratios) {
+        int total = ratios.getARatio() + ratios.getBRatio() + ratios.getCRatio()
+                  + ratios.getDRatio() + ratios.getFRatio();
+        if (total > 100) {
+            return ResponseEntity.badRequest().body(Map.of("success", false,
+                "message", "학점 비율 합계가 100%를 초과할 수 없습니다. (현재 " + total + "%)"));
+        }
+        ratios.setSubjectId(id);
+        subjectGradeMapper.saveOrUpdateRatios(ratios);
         return ResponseEntity.ok(Map.of("success", true));
     }
 

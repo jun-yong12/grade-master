@@ -49,6 +49,43 @@
         </div>
     </div>
 
+    <!-- 학점 비율 설정 -->
+    <div class="card" style="margin-bottom:16px">
+        <h3 style="margin-bottom:16px">📊 학점 비율 설정 (상대평가)</h3>
+        <div class="form-row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">
+            <div class="form-group" style="margin:0">
+                <label>A (%)</label>
+                <input id="r-a" type="number" min="0" max="100"
+                       th:value="${ratios.aRatio}" class="form-input" style="width:80px" oninput="onRatioChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>B (%)</label>
+                <input id="r-b" type="number" min="0" max="100"
+                       th:value="${ratios.bRatio}" class="form-input" style="width:80px" oninput="onRatioChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>C (%)</label>
+                <input id="r-c" type="number" min="0" max="100"
+                       th:value="${ratios.cRatio}" class="form-input" style="width:80px" oninput="onRatioChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>D (%)</label>
+                <input id="r-d" type="number" min="0" max="100"
+                       th:value="${ratios.dRatio}" class="form-input" style="width:80px" oninput="onRatioChange()"/>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>F (%)</label>
+                <input id="r-f" type="number" min="0" max="100"
+                       th:value="${ratios.fRatio}" class="form-input" style="width:80px" oninput="onRatioChange()"/>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding-bottom:1px">
+                <span id="ratio-sum-label" style="font-size:.85rem;color:#718096"></span>
+                <button type="button" class="btn btn-primary" onclick="saveRatios()">비율 저장</button>
+            </div>
+        </div>
+        <p style="margin-top:10px;font-size:.8rem;color:#a0aec0">합계 100% 권장 · 초과 불가. 점수 순 상위부터 A→B→C→D→F 순으로 자동 배분됩니다.</p>
+    </div>
+
     <!-- 성적 테이블 -->
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -81,13 +118,13 @@
                           th:text="${g.status}"></span>
                 </td>
                 <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="attendance"
-                           th:value="${g.attendanceScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                           th:value="${g.attendanceScore}" placeholder="-" oninput="onScoreInput(this.closest('tr'))"/></td>
                 <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="midterm"
-                           th:value="${g.midtermScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                           th:value="${g.midtermScore}" placeholder="-" oninput="onScoreInput(this.closest('tr'))"/></td>
                 <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="final"
-                           th:value="${g.finalScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                           th:value="${g.finalScore}" placeholder="-" oninput="onScoreInput(this.closest('tr'))"/></td>
                 <td><input type="number" min="0" max="100" step="0.1" class="score-input" data-field="assignment"
-                           th:value="${g.assignmentScore}" placeholder="-" oninput="recalcRow(this.closest('tr'))"/></td>
+                           th:value="${g.assignmentScore}" placeholder="-" oninput="onScoreInput(this.closest('tr'))"/></td>
                 <td class="total-cell" style="font-weight:600">-</td>
                 <td><span class="badge grade-badge">-</span></td>
             </tr>
@@ -99,12 +136,13 @@
 <script th:inline="javascript">
     const SUBJECT_ID = [[${subject.id}]];
 
+    // ── 배점 ──────────────────────────────────────────────
     function getWeights() {
         return {
-            attendance:  parseInt(document.getElementById('w-attendance').value)  || 0,
-            midterm:     parseInt(document.getElementById('w-midterm').value)     || 0,
-            final:       parseInt(document.getElementById('w-final').value)       || 0,
-            assignment:  parseInt(document.getElementById('w-assignment').value)  || 0,
+            attendance: parseInt(document.getElementById('w-attendance').value) || 0,
+            midterm:    parseInt(document.getElementById('w-midterm').value)    || 0,
+            final:      parseInt(document.getElementById('w-final').value)      || 0,
+            assignment: parseInt(document.getElementById('w-assignment').value) || 0,
         };
     }
 
@@ -113,57 +151,21 @@
         const sum = w.attendance + w.midterm + w.final + w.assignment;
         const label = document.getElementById('weight-sum-label');
         label.textContent = '합계: ' + sum + '%';
-        label.style.color = sum === 100 ? '#38a169' : '#e53e3e';
+        label.style.color = sum <= 100 ? '#38a169' : '#e53e3e';
 
-        // 헤더 업데이트
         document.getElementById('th-attendance').textContent = '출결 (' + w.attendance + '%)';
         document.getElementById('th-midterm').textContent    = '중간고사 (' + w.midterm + '%)';
         document.getElementById('th-final').textContent      = '기말고사 (' + w.final + '%)';
         document.getElementById('th-assignment').textContent = '과제 (' + w.assignment + '%)';
 
         document.querySelectorAll('#grade-table tbody tr[data-student-id]').forEach(recalcRow);
-    }
-
-    function recalcRow(row) {
-        const w = getWeights();
-        const get = (field) => parseFloat(row.querySelector('[data-field="' + field + '"]').value) || 0;
-        const total = get('attendance') * w.attendance / 100
-                    + get('midterm')    * w.midterm    / 100
-                    + get('final')      * w.final      / 100
-                    + get('assignment') * w.assignment  / 100;
-        const hasAny = ['attendance','midterm','final','assignment']
-            .some(f => row.querySelector('[data-field="' + f + '"]').value !== '');
-
-        row.querySelector('.total-cell').textContent = hasAny ? total.toFixed(1) : '-';
-        const badge = row.querySelector('.grade-badge');
-        badge.textContent = hasAny ? letterGrade(total) : '-';
-        badge.className = 'badge grade-badge ' + gradeBadgeClass(total, hasAny);
-    }
-
-    function letterGrade(score) {
-        if (score >= 95) return 'A+';
-        if (score >= 90) return 'A0';
-        if (score >= 85) return 'B+';
-        if (score >= 80) return 'B0';
-        if (score >= 75) return 'C+';
-        if (score >= 70) return 'C0';
-        if (score >= 65) return 'D+';
-        if (score >= 60) return 'D0';
-        return 'F';
-    }
-
-    function gradeBadgeClass(score, hasAny) {
-        if (!hasAny) return '';
-        if (score >= 90) return 'badge-a';
-        if (score >= 80) return 'badge-b';
-        if (score >= 70) return 'badge-c';
-        return 'badge-f';
+        assignRelativeGrades();
     }
 
     async function saveWeights() {
         const w = getWeights();
         const sum = w.attendance + w.midterm + w.final + w.assignment;
-        if (sum !== 100) { alert('배점 합계가 100%여야 합니다. (현재 ' + sum + '%)'); return; }
+        if (sum > 100) { alert('배점 합계가 100%를 초과할 수 없습니다. (현재 ' + sum + '%)'); return; }
         const res = await fetch('/subjects/' + SUBJECT_ID + '/weights', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -173,6 +175,98 @@
         alert(json.success ? '배점이 저장되었습니다.' : json.message);
     }
 
+    // ── 성적 행 계산 ───────────────────────────────────────
+    function recalcRow(row) {
+        const w = getWeights();
+        const get = (f) => parseFloat(row.querySelector('[data-field="' + f + '"]').value) || 0;
+        const total = get('attendance') * w.attendance / 100
+                    + get('midterm')    * w.midterm    / 100
+                    + get('final')      * w.final      / 100
+                    + get('assignment') * w.assignment  / 100;
+        const hasAny = ['attendance','midterm','final','assignment']
+            .some(f => row.querySelector('[data-field="' + f + '"]').value !== '');
+        row.querySelector('.total-cell').textContent = hasAny ? total.toFixed(1) : '-';
+    }
+
+    function onScoreInput(row) {
+        recalcRow(row);
+        assignRelativeGrades();
+    }
+
+    // ── 학점 비율 ──────────────────────────────────────────
+    function getRatios() {
+        return {
+            a: parseInt(document.getElementById('r-a').value) || 0,
+            b: parseInt(document.getElementById('r-b').value) || 0,
+            c: parseInt(document.getElementById('r-c').value) || 0,
+            d: parseInt(document.getElementById('r-d').value) || 0,
+            f: parseInt(document.getElementById('r-f').value) || 0,
+        };
+    }
+
+    function onRatioChange() {
+        const r = getRatios();
+        const sum = r.a + r.b + r.c + r.d + r.f;
+        const label = document.getElementById('ratio-sum-label');
+        label.textContent = '합계: ' + sum + '%';
+        label.style.color = sum <= 100 ? '#38a169' : '#e53e3e';
+        assignRelativeGrades();
+    }
+
+    function assignRelativeGrades() {
+        const rows = Array.from(document.querySelectorAll('#grade-table tbody tr[data-student-id]'));
+        const r = getRatios();
+
+        // 점수가 입력된 행만 점수 내림차순 정렬
+        const scored = rows
+            .map(row => ({ row, total: parseFloat(row.querySelector('.total-cell').textContent) }))
+            .filter(s => !isNaN(s.total))
+            .sort((a, b) => b.total - a.total);
+
+        const n = scored.length;
+
+        // 누적 비율로 각 학점의 절단 인덱스 계산
+        const cutA = Math.floor(n * r.a / 100);
+        const cutB = Math.floor(n * (r.a + r.b) / 100);
+        const cutC = Math.floor(n * (r.a + r.b + r.c) / 100);
+        const cutD = Math.floor(n * (r.a + r.b + r.c + r.d) / 100);
+
+        scored.forEach(({ row }, i) => {
+            let grade, cls;
+            if      (i < cutA) { grade = 'A'; cls = 'badge-a'; }
+            else if (i < cutB) { grade = 'B'; cls = 'badge-b'; }
+            else if (i < cutC) { grade = 'C'; cls = 'badge-c'; }
+            else if (i < cutD) { grade = 'D'; cls = 'badge-f'; }
+            else               { grade = 'F'; cls = 'badge-f'; }
+            const badge = row.querySelector('.grade-badge');
+            badge.textContent = grade;
+            badge.className = 'badge grade-badge ' + cls;
+        });
+
+        // 점수 없는 행은 초기화
+        rows.forEach(row => {
+            if (isNaN(parseFloat(row.querySelector('.total-cell').textContent))) {
+                const badge = row.querySelector('.grade-badge');
+                badge.textContent = '-';
+                badge.className = 'badge grade-badge';
+            }
+        });
+    }
+
+    async function saveRatios() {
+        const r = getRatios();
+        const sum = r.a + r.b + r.c + r.d + r.f;
+        if (sum > 100) { alert('학점 비율 합계가 100%를 초과할 수 없습니다. (현재 ' + sum + '%)'); return; }
+        const res = await fetch('/subjects/' + SUBJECT_ID + '/ratios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aRatio: r.a, bRatio: r.b, cRatio: r.c, dRatio: r.d, fRatio: r.f })
+        });
+        const json = await res.json();
+        alert(json.success ? '학점 비율이 저장되었습니다.' : json.message);
+    }
+
+    // ── 성적 저장 ──────────────────────────────────────────
     async function saveGrades() {
         const entries = [];
         document.querySelectorAll('#grade-table tbody tr[data-student-id]').forEach(row => {
@@ -181,11 +275,11 @@
                 return v === '' ? null : parseFloat(v);
             };
             entries.push({
-                studentId:        parseInt(row.dataset.studentId),
-                attendanceScore:  get('attendance'),
-                midtermScore:     get('midterm'),
-                finalScore:       get('final'),
-                assignmentScore:  get('assignment'),
+                studentId:       parseInt(row.dataset.studentId),
+                attendanceScore: get('attendance'),
+                midtermScore:    get('midterm'),
+                finalScore:      get('final'),
+                assignmentScore: get('assignment'),
             });
         });
         const res = await fetch('/subjects/' + SUBJECT_ID + '/grades', {
@@ -197,9 +291,9 @@
         alert(json.success ? '성적이 저장되었습니다.' : '저장 중 오류가 발생했습니다.');
     }
 
-    // 페이지 로드 시 초기화
+    // ── 초기화 ─────────────────────────────────────────────
     onWeightChange();
-    document.querySelectorAll('#grade-table tbody tr[data-student-id]').forEach(recalcRow);
+    onRatioChange();
 </script>
 </body>
 </html>

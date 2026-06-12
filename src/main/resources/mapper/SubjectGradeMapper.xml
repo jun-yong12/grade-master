@@ -11,9 +11,30 @@
     </select>
 
     <insert id="saveOrUpdateWeights">
-        MERGE INTO subject_grade_weights (subject_id, attendance_weight, midterm_weight, final_weight, assignment_weight)
-        KEY (subject_id)
+        INSERT INTO subject_grade_weights (subject_id, attendance_weight, midterm_weight, final_weight, assignment_weight)
         VALUES (#{subjectId}, #{attendanceWeight}, #{midtermWeight}, #{finalWeight}, #{assignmentWeight})
+        ON DUPLICATE KEY UPDATE
+            attendance_weight = #{attendanceWeight},
+            midterm_weight    = #{midtermWeight},
+            final_weight      = #{finalWeight},
+            assignment_weight = #{assignmentWeight}
+    </insert>
+
+    <select id="findRatiosBySubject" resultType="SubjectGradeRatioDTO">
+        SELECT subject_id, a_ratio, b_ratio, c_ratio, d_ratio, f_ratio
+        FROM subject_grade_ratios
+        WHERE subject_id = #{subjectId}
+    </select>
+
+    <insert id="saveOrUpdateRatios">
+        INSERT INTO subject_grade_ratios (subject_id, a_ratio, b_ratio, c_ratio, d_ratio, f_ratio)
+        VALUES (#{subjectId}, #{aRatio}, #{bRatio}, #{cRatio}, #{dRatio}, #{fRatio})
+        ON DUPLICATE KEY UPDATE
+            a_ratio = #{aRatio},
+            b_ratio = #{bRatio},
+            c_ratio = #{cRatio},
+            d_ratio = #{dRatio},
+            f_ratio = #{fRatio}
     </insert>
 
     <select id="findGradesBySubject" resultType="SubjectGradeRowDTO">
@@ -33,9 +54,13 @@
     </select>
 
     <insert id="saveOrUpdateGrade">
-        MERGE INTO subject_grades (subject_id, student_id, attendance_score, midterm_score, final_score, assignment_score)
-        KEY (subject_id, student_id)
+        INSERT INTO subject_grades (subject_id, student_id, attendance_score, midterm_score, final_score, assignment_score)
         VALUES (#{subjectId}, #{entry.studentId}, #{entry.attendanceScore}, #{entry.midtermScore}, #{entry.finalScore}, #{entry.assignmentScore})
+        ON DUPLICATE KEY UPDATE
+            attendance_score = #{entry.attendanceScore},
+            midterm_score    = #{entry.midtermScore},
+            final_score      = #{entry.finalScore},
+            assignment_score = #{entry.assignmentScore}
     </insert>
 
 </mapper>

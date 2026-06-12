@@ -1,6 +1,7 @@
 package kr.ac.tukorea.grade.mapper;
 
 import kr.ac.tukorea.grade.dto.SubjectGradeEntryDTO;
+import kr.ac.tukorea.grade.dto.SubjectGradeRatioDTO;
 import kr.ac.tukorea.grade.dto.SubjectGradeRowDTO;
 import kr.ac.tukorea.grade.dto.SubjectGradeWeightDTO;
 import org.apache.ibatis.annotations.Mapper;
@@ -12,6 +13,9 @@ import java.util.List;
 public interface SubjectGradeMapper {
     SubjectGradeWeightDTO findWeightsBySubject(@Param("subjectId") Long subjectId);
     void saveOrUpdateWeights(SubjectGradeWeightDTO weights);
+
+    SubjectGradeRatioDTO findRatiosBySubject(@Param("subjectId") Long subjectId);
+    void saveOrUpdateRatios(SubjectGradeRatioDTO ratios);
 
     List<SubjectGradeRowDTO> findGradesBySubject(@Param("subjectId") Long subjectId);
     void saveOrUpdateGrade(@Param("subjectId") Long subjectId, @Param("entry") SubjectGradeEntryDTO entry);

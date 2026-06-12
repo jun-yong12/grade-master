@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('오류 발생')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+<div class="container" style="text-align:center; padding-top: 80px;">
+    <h1 th:text="${status}" style="font-size: 5rem; color: #e53e3e;">500</h1>
+    <p style="font-size: 1.2rem; color: #718096; margin: 12px 0;" th:text="${error}">오류가 발생했습니다.</p>
+    <a href="/" class="btn btn-primary">홈으로 돌아가기</a>
+</div>
+</body>
+</html>
