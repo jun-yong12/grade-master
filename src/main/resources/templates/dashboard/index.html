@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('대시보드')}"></head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+<div class="container">
+
+    <div class="toolbar">
+        <h2>대시보드</h2>
+    </div>
+
+    <!-- 요약 카드 -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value" th:text="${summary.totalStudents}">0</div>
+            <div class="stat-label">전체 학생 수</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value green" th:text="${summary.activeStudents}">0</div>
+            <div class="stat-label">재학생</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value red" th:text="${summary.inactiveStudents}">0</div>
+            <div class="stat-label">휴학생</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${summary.totalSubjects}">0</div>
+            <div class="stat-label">전체 과목 수</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${summary.totalDepartments}">0</div>
+            <div class="stat-label">학과 수</div>
+        </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="showTab('dept', this)">학과 현황</button>
+        <button class="tab-btn"        onclick="showTab('grades', this)">성적 통계</button>
+        <button class="tab-btn"        onclick="showTab('status', this)">성적 입력 현황</button>
+    </div>
+
+    <!-- 탭 1: 학과 현황 -->
+    <div id="tab-dept" class="tab-panel active">
+        <div class="card">
+            <h3>학과별 학생 현황</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>학과</th>
+                    <th>전체</th>
+                    <th>재학</th>
+                    <th>휴학</th>
+                    <th>과목 수</th>
+                    <th>재학 비율</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${deptList}">
+                    <td th:text="${d.department}" style="font-weight:600"></td>
+                    <td th:text="${d.studentCount}"></td>
+                    <td>
+                        <span class="badge badge-a" th:text="${d.activeCount}"></span>
+                    </td>
+                    <td>
+                        <span class="badge badge-f"
+                              th:if="${d.inactiveCount > 0}"
+                              th:text="${d.inactiveCount}"></span>
+                        <span th:if="${d.inactiveCount == 0}" style="color:#a0aec0">-</span>
+                    </td>
+                    <td th:text="${d.subjectCount}"></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill"
+                                     th:style="'width:' + (${d.studentCount > 0} ? ${#numbers.formatDecimal(d.activeCount * 100.0 / d.studentCount, 1, 1)} : '0') + '%'"></div>
+                            </div>
+                            <span style="font-size:.82rem;color:#718096;white-space:nowrap"
+                                  th:text="${d.studentCount > 0} ? ${#numbers.formatDecimal(d.activeCount * 100.0 / d.studentCount, 1, 1)} + '%' : '-'"></span>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr style="font-weight:700;background:#f7fafc">
+                    <td>합계</td>
+                    <td th:text="${summary.totalStudents}"></td>
+                    <td th:text="${summary.activeStudents}"></td>
+                    <td th:text="${summary.inactiveStudents}"></td>
+                    <td th:text="${summary.totalSubjects}"></td>
+                    <td th:text="${summary.totalStudents > 0} ? ${#numbers.formatDecimal(summary.activeStudents * 100.0 / summary.totalStudents, 1, 1)} + '%' : '-'"></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- 탭 2: 성적 통계 -->
+    <div id="tab-grades" class="tab-panel">
+        <div class="card">
+            <h3>과목별 성적 통계</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>과목명</th>
+                    <th>학과</th>
+                    <th>교수</th>
+                    <th>성적 입력 수</th>
+                    <th>평균</th>
+                    <th>최고</th>
+                    <th>최저</th>
+                    <th>평균 분포</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${subjectStats}">
+                    <td>
+                        <a th:href="@{/subjects/{id}(id=${s.id})}" class="student-link"
+                           th:text="${s.subject}"></a>
+                    </td>
+                    <td th:text="${s.department}"></td>
+                    <td th:text="${s.professor}"></td>
+                    <td>
+                        <span th:if="${s.gradedCount > 0}"
+                              class="badge badge-b" th:text="${s.gradedCount} + '명'"></span>
+                        <span th:if="${s.gradedCount == 0}"
+                              style="color:#a0aec0;font-size:.82rem">미입력</span>
+                    </td>
+                    <td th:text="${s.avgScore != null} ? ${s.avgScore} : '-'"
+                        style="font-weight:600"></td>
+                    <td>
+                        <span th:if="${s.maxScore != null}"
+                              class="badge badge-a" th:text="${s.maxScore}"></span>
+                        <span th:if="${s.maxScore == null}" style="color:#a0aec0">-</span>
+                    </td>
+                    <td>
+                        <span th:if="${s.minScore != null}"
+                              th:class="${s.minScore < 60} ? 'badge badge-f' : 'badge badge-c'"
+                              th:text="${s.minScore}"></span>
+                        <span th:if="${s.minScore == null}" style="color:#a0aec0">-</span>
+                    </td>
+                    <td style="min-width:120px">
+                        <div th:if="${s.avgScore != null}"
+                             style="display:flex;align-items:center;gap:8px">
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill"
+                                     th:style="'width:' + ${s.avgScore} + '%'"></div>
+                            </div>
+                            <span style="font-size:.82rem;color:#718096;white-space:nowrap"
+                                  th:text="${s.avgScore} + '점'"></span>
+                        </div>
+                        <span th:if="${s.avgScore == null}" style="color:#a0aec0;font-size:.82rem">-</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(subjectStats)}">
+                    <td colspan="8" class="empty-msg">등록된 과목이 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- 탭 3: 성적 입력 현황 -->
+    <div id="tab-status" class="tab-panel">
+        <div class="card">
+            <h3>과목별 성적 입력 현황</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>과목명</th>
+                    <th>학과</th>
+                    <th>교수</th>
+                    <th>전체 학생</th>
+                    <th>입력 완료</th>
+                    <th>미입력</th>
+                    <th>입력률</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${gradeStatus}">
+                    <td><a th:href="@{/subjects/{id}(id=${s.id})}" class="student-link" th:text="${s.subject}"></a></td>
+                    <td th:text="${s.department}"></td>
+                    <td th:text="${s.professor}"></td>
+                    <td th:text="${s.totalStudents} + '명'"></td>
+                    <td>
+                        <span class="badge badge-a" th:if="${s.gradedStudents > 0}" th:text="${s.gradedStudents} + '명'"></span>
+                        <span style="color:#a0aec0" th:if="${s.gradedStudents == 0}">0명</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-f" th:if="${s.ungradedStudents > 0}" th:text="${s.ungradedStudents} + '명'"></span>
+                        <span style="color:#38a169;font-weight:600" th:if="${s.ungradedStudents == 0}">완료</span>
+                    </td>
+                    <td style="min-width:140px">
+                        <div th:if="${s.totalStudents > 0}" style="display:flex;align-items:center;gap:8px">
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill"
+                                     th:style="'width:' + ${#numbers.formatDecimal(s.gradedStudents * 100.0 / s.totalStudents, 1, 1)} + '%'"></div>
+                            </div>
+                            <span style="font-size:.82rem;color:#718096;white-space:nowrap"
+                                  th:text="${#numbers.formatDecimal(s.gradedStudents * 100.0 / s.totalStudents, 1, 1)} + '%'"></span>
+                        </div>
+                        <span th:if="${s.totalStudents == 0}" style="color:#a0aec0">-</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function showTab(name, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>

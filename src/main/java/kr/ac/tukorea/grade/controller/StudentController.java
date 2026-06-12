@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import kr.ac.tukorea.grade.dto.GradeDTO;
 import kr.ac.tukorea.grade.dto.PageDTO;
 import kr.ac.tukorea.grade.dto.StudentDTO;
+import kr.ac.tukorea.grade.mapper.StudentMapper;
+import kr.ac.tukorea.grade.service.ExcelExportService;
 import kr.ac.tukorea.grade.service.GradeService;
 import kr.ac.tukorea.grade.service.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,8 @@ public class StudentController {
 
     private final StudentService studentService;
     private final GradeService gradeService;
+    private final ExcelExportService excelExportService;
+    private final StudentMapper studentMapper;
 
     // ── 학생 목록 (페이징 + 검색) ──────────────────────
     @Operation(summary = "학생 목록 조회")
@@ -48,7 +52,38 @@ public class StudentController {
         model.addAttribute("page", page);
         model.addAttribute("totalCount", totalCount);
         model.addAttribute("totalPages", totalPages);
+        model.addAttribute("departments", studentMapper.findDistinctDepartments());
         return "board/list";
+    }
+
+    // ── 엑셀 내보내기 ──────────────────────────────────
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(@ModelAttribute PageDTO page) throws Exception {
+        List<StudentDTO> students = studentMapper.findAllNoLimit(page);
+        byte[] bytes = excelExportService.exportStudents(students);
+        String filename = URLEncoder.encode("학생목록.xlsx", StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
+    }
+
+    // ── 성적 빠른 조회 (모달용 JSON) ──────────────────────
+    @GetMapping("/{id}/grades-quick")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> gradesQuick(@PathVariable Long id) {
+        StudentDTO student = studentService.findById(id);
+        List<GradeDTO> grades = gradeService.findByStudentId(id);
+        double avg = grades.stream().mapToInt(GradeDTO::getScore).average().orElse(0);
+        return ResponseEntity.ok(Map.of(
+                "name",          student.getName(),
+                "studentNumber", student.getStudentNumber(),
+                "department",    student.getDepartment() != null ? student.getDepartment() : "",
+                "grade",         student.getGrade()      != null ? student.getGrade()      : "",
+                "status",        student.getStatus()     != null ? student.getStatus()     : "",
+                "average",       Math.round(avg * 10.0) / 10.0,
+                "grades",        grades
+        ));
     }
 
     // ── 학생 등록 폼 ───────────────────────────────────

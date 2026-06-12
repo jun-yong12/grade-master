@@ -13,8 +13,12 @@
         <a th:href="@{/}" class="brand-link">🎓 성적 관리 시스템</a>
     </div>
     <nav class="sidebar-menu">
-        <a th:href="@{/students}" class="nav-link">학생 관리</a>
-        <a th:href="@{/subjects}" class="nav-link">담당 과목</a>
+        <a th:href="@{/dashboard}"
+           th:class="'nav-link' + (${#request.requestURI.startsWith('/dashboard')} ? ' active' : '')">대시보드</a>
+        <a th:href="@{/students}"
+           th:class="'nav-link' + (${#request.requestURI.startsWith('/students')} ? ' active' : '')">학생 관리</a>
+        <a th:href="@{/subjects}"
+           th:class="'nav-link' + (${#request.requestURI.startsWith('/subjects')} ? ' active' : '')">담당 과목</a>
     </nav>
     <div class="sidebar-bottom">
         <a th:href="@{/(lang=ko)}" class="nav-link lang-btn">🇰🇷 한국어</a>

@@ -10,7 +10,26 @@
     <div class="toolbar">
         <h2 th:text="#{student.list}">학생 목록</h2>
         <div class="toolbar-right">
-            <form method="get" th:action="@{/students}" class="search-form">
+            <form method="get" th:action="@{/students}" class="search-form" id="filterForm">
+                <!-- 필터 드롭다운 -->
+                <select name="filterDept" class="form-input form-input-sm" onchange="submitFilter()">
+                    <option value="">전체 학과</option>
+                    <option th:each="d : ${departments}" th:value="${d}"
+                            th:text="${d}" th:selected="${page.filterDept == d}"></option>
+                </select>
+                <select name="filterGrade" class="form-input form-input-sm" onchange="submitFilter()">
+                    <option value="">전체 학년</option>
+                    <option value="1학년" th:selected="${page.filterGrade == '1학년'}">1학년</option>
+                    <option value="2학년" th:selected="${page.filterGrade == '2학년'}">2학년</option>
+                    <option value="3학년" th:selected="${page.filterGrade == '3학년'}">3학년</option>
+                    <option value="4학년" th:selected="${page.filterGrade == '4학년'}">4학년</option>
+                </select>
+                <select name="filterStatus" class="form-input form-input-sm" onchange="submitFilter()">
+                    <option value="">전체 상태</option>
+                    <option value="재학" th:selected="${page.filterStatus == '재학'}">재학</option>
+                    <option value="휴학" th:selected="${page.filterStatus == '휴학'}">휴학</option>
+                </select>
+                <!-- 검색 -->
                 <select name="searchType" class="form-input form-input-sm">
                     <option value="name"          th:selected="${page.searchType == 'name'}">이름</option>
                     <option value="studentNumber" th:selected="${page.searchType == 'studentNumber'}">학번</option>
@@ -20,6 +39,9 @@
                 <button type="submit" class="btn btn-secondary">🔍</button>
                 <a th:href="@{/students}" class="btn btn-secondary">전체</a>
             </form>
+            <!-- 엑셀 내보내기 -->
+            <a th:href="@{/students/export(filterDept=${page.filterDept},filterGrade=${page.filterGrade},filterStatus=${page.filterStatus},keyword=${page.keyword},searchType=${page.searchType})}"
+               class="btn btn-secondary">📥 엑셀</a>
             <button type="button" class="btn btn-primary" onclick="openStudentModal()">+ 학생 등록</button>
         </div>
     </div>
@@ -28,10 +50,10 @@
         <table class="table">
             <thead>
             <tr>
-                <th><a th:href="@{/students(sortField='student_number', sortDir=${page.sortField == 'student_number' and page.sortDir == 'ASC' ? 'DESC' : 'ASC'}, keyword=${page.keyword})}">학번 ↕</a></th>
-                <th><a th:href="@{/students(sortField='name', sortDir=${page.sortField == 'name' and page.sortDir == 'ASC' ? 'DESC' : 'ASC'}, keyword=${page.keyword})}">이름 ↕</a></th>
+                <th><a th:href="@{/students(sortField='student_number', sortDir=${page.sortField == 'student_number' and page.sortDir == 'ASC' ? 'DESC' : 'ASC'}, keyword=${page.keyword}, filterDept=${page.filterDept}, filterGrade=${page.filterGrade}, filterStatus=${page.filterStatus})}">학번 ↕</a></th>
+                <th><a th:href="@{/students(sortField='name', sortDir=${page.sortField == 'name' and page.sortDir == 'ASC' ? 'DESC' : 'ASC'}, keyword=${page.keyword}, filterDept=${page.filterDept}, filterGrade=${page.filterGrade}, filterStatus=${page.filterStatus})}">이름 ↕</a></th>
                 <th>학년</th>
-                <th>과</th>
+                <th>학과</th>
                 <th>전화번호</th>
                 <th>이메일</th>
                 <th>상태</th>
@@ -44,7 +66,9 @@
             </tr>
             <tr th:each="s : ${students}">
                 <td th:text="${s.studentNumber}"></td>
-                <td th:text="${s.name}"></td>
+                <td>
+                    <a th:href="@{/students/{id}(id=${s.id})}" class="student-link" th:text="${s.name}"></a>
+                </td>
                 <td th:text="${s.grade}"></td>
                 <td th:text="${s.department}"></td>
                 <td th:text="${s.phone}"></td>
@@ -54,6 +78,8 @@
                           th:text="${s.status}"></span>
                 </td>
                 <td class="actions">
+                    <button type="button" class="btn btn-sm btn-info"
+                            th:onclick="'openGradeModal(' + ${s.id} + ', \'' + ${s.name} + '\')'">성적</button>
                     <a th:href="@{/students/{id}/edit(id=${s.id})}" class="btn btn-sm btn-warning">수정</a>
                     <form th:action="@{/students/{id}/delete(id=${s.id})}" method="post" style="display:inline"
                           onsubmit="return confirm('정말 삭제하시겠습니까?')">
@@ -71,7 +97,7 @@
     </div>
 </div>
 
-<!-- 학생 등록 모달 -->
+<!-- ── 학생 등록 모달 ── -->
 <div id="studentModal" class="modal-overlay" onclick="closeStudentModal(event)">
     <div class="modal-dialog">
         <div class="modal-header">
@@ -101,7 +127,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>과</label>
+                    <label>학과</label>
                     <input type="text" name="department" placeholder="예: 컴퓨터공학과" class="form-input"/>
                 </div>
             </div>
@@ -128,34 +154,46 @@
     </div>
 </div>
 
+<!-- ── 성적 빠른 보기 모달 ── -->
+<div id="gradeModal" class="modal-overlay" onclick="closeGradeModal(event)">
+    <div class="modal-dialog" style="max-width:560px">
+        <div class="modal-header">
+            <h3 id="gradeModalTitle">성적 조회</h3>
+            <button type="button" class="modal-close" onclick="closeGradeModal()">✕</button>
+        </div>
+        <div id="gradeModalBody" style="min-height:120px">
+            <p style="color:#a0aec0;text-align:center;padding:40px 0">불러오는 중...</p>
+        </div>
+        <div style="margin-top:16px;text-align:right">
+            <a id="gradeDetailLink" href="#" class="btn btn-primary btn-sm">상세 보기 →</a>
+        </div>
+    </div>
+</div>
+
 <script th:src="@{/js/main.js}"></script>
 <script>
+function submitFilter() { document.getElementById('filterForm').submit(); }
+
 function openStudentModal() {
     document.getElementById('studentModalForm').reset();
     document.querySelectorAll('.error-msg[id^="err-"]').forEach(el => el.textContent = '');
     document.querySelectorAll('.form-input.input-error').forEach(el => el.classList.remove('input-error'));
     document.getElementById('studentModal').classList.add('active');
 }
-
 function closeStudentModal(event) {
     if (event && event.target !== document.getElementById('studentModal')) return;
     document.getElementById('studentModal').classList.remove('active');
 }
-
 async function submitStudentForm(event) {
     event.preventDefault();
     const form = event.target;
     const data = new URLSearchParams(new FormData(form));
-
     document.querySelectorAll('.error-msg[id^="err-"]').forEach(el => el.textContent = '');
     document.querySelectorAll('.form-input.input-error').forEach(el => el.classList.remove('input-error'));
-
     const res = await fetch('/students/create', { method: 'POST', body: data });
     const json = await res.json();
-
-    if (json.success) {
-        location.reload();
-    } else {
+    if (json.success) { location.reload(); }
+    else {
         Object.entries(json.errors || {}).forEach(([field, msg]) => {
             const errEl = document.getElementById('err-' + field);
             if (errEl) errEl.textContent = msg;
@@ -163,6 +201,46 @@ async function submitStudentForm(event) {
             if (input) input.classList.add('input-error');
         });
     }
+}
+
+async function openGradeModal(studentId, name) {
+    document.getElementById('gradeModalTitle').textContent = name + ' 성적 조회';
+    document.getElementById('gradeDetailLink').href = '/students/' + studentId;
+    document.getElementById('gradeModalBody').innerHTML = '<p style="color:#a0aec0;text-align:center;padding:40px 0">불러오는 중...</p>';
+    document.getElementById('gradeModal').classList.add('active');
+
+    const res = await fetch('/students/' + studentId + '/grades-quick');
+    const d = await res.json();
+
+    const gradeColors = {A:'badge-a', B:'badge-b', C:'badge-c', D:'badge-f', F:'badge-f'};
+    let html = `
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+            <span style="font-size:.85rem;color:#718096">학번: <strong>${d.studentNumber}</strong></span>
+            <span style="font-size:.85rem;color:#718096">학과: <strong>${d.department}</strong></span>
+            <span style="font-size:.85rem;color:#718096">학년: <strong>${d.grade}</strong></span>
+            <span style="font-size:.85rem;color:#718096">평균: <strong style="color:#4f46e5">${d.average}점</strong></span>
+        </div>`;
+
+    if (d.grades && d.grades.length > 0) {
+        html += '<table class="table"><thead><tr><th>과목</th><th>학기</th><th>점수</th><th>학점</th></tr></thead><tbody>';
+        d.grades.forEach(g => {
+            const cls = gradeColors[g.letterGrade] || 'badge-f';
+            html += `<tr>
+                <td>${g.subject}</td>
+                <td style="color:#718096">${g.semester}</td>
+                <td style="font-weight:600">${g.score}</td>
+                <td><span class="badge ${cls}">${g.letterGrade}</span></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    } else {
+        html += '<p style="color:#a0aec0;text-align:center;padding:20px 0">등록된 성적이 없습니다.</p>';
+    }
+    document.getElementById('gradeModalBody').innerHTML = html;
+}
+function closeGradeModal(event) {
+    if (event && event.target !== document.getElementById('gradeModal')) return;
+    document.getElementById('gradeModal').classList.remove('active');
 }
 </script>
 </body>

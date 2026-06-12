@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.ac.tukorea.grade.mapper.DashboardMapper">
+
+    <select id="getSummary" resultType="DashboardSummaryDTO">
+        SELECT
+            (SELECT COUNT(*)                        FROM students)                 AS totalStudents,
+            (SELECT COUNT(*) FROM students WHERE status = '재학')                  AS activeStudents,
+            (SELECT COUNT(*) FROM students WHERE status = '휴학')                  AS inactiveStudents,
+            (SELECT COUNT(*)                        FROM subjects)                 AS totalSubjects,
+            (SELECT COUNT(DISTINCT department)      FROM students)                 AS totalDepartments
+    </select>
+
+    <select id="getDeptOverview" resultType="DeptOverviewDTO">
+        SELECT
+            d.department,
+            COALESCE(st.student_count,  0)                                  AS studentCount,
+            COALESCE(st.active_count,   0)                                  AS activeCount,
+            COALESCE(st.student_count,  0) - COALESCE(st.active_count, 0)  AS inactiveCount,
+            COALESCE(sub.subject_count, 0)                                  AS subjectCount
+        FROM (
+            SELECT DISTINCT department FROM students
+            UNION
+            SELECT DISTINCT department FROM subjects
+        ) d
+        LEFT JOIN (
+            SELECT department,
+                   COUNT(*)                                               AS student_count,
+                   SUM(CASE WHEN status = '재학' THEN 1 ELSE 0 END)      AS active_count
+            FROM students
+            GROUP BY department
+        ) st  ON d.department = st.department
+        LEFT JOIN (
+            SELECT department, COUNT(*) AS subject_count
+            FROM subjects
+            GROUP BY department
+        ) sub ON d.department = sub.department
+        ORDER BY studentCount DESC
+    </select>
+
+    <select id="getSubjectGradeStats" resultType="SubjectGradeStatDTO">
+        SELECT
+            sub.id,
+            sub.subject,
+            sub.department,
+            sub.professor,
+            COUNT(sg.student_id)                                                   AS gradedCount,
+            ROUND(AVG(
+                COALESCE(sg.attendance_score, 0) * COALESCE(w.attendance_weight, 10) / 100 +
+                COALESCE(sg.midterm_score,    0) * COALESCE(w.midterm_weight,    30) / 100 +
+                COALESCE(sg.final_score,      0) * COALESCE(w.final_weight,      40) / 100 +
+                COALESCE(sg.assignment_score, 0) * COALESCE(w.assignment_weight, 20) / 100
+            ), 1)                                                                   AS avgScore,
+            ROUND(MAX(
+                COALESCE(sg.attendance_score, 0) * COALESCE(w.attendance_weight, 10) / 100 +
+                COALESCE(sg.midterm_score,    0) * COALESCE(w.midterm_weight,    30) / 100 +
+                COALESCE(sg.final_score,      0) * COALESCE(w.final_weight,      40) / 100 +
+                COALESCE(sg.assignment_score, 0) * COALESCE(w.assignment_weight, 20) / 100
+            ), 1)                                                                   AS maxScore,
+            ROUND(MIN(
+                COALESCE(sg.attendance_score, 0) * COALESCE(w.attendance_weight, 10) / 100 +
+                COALESCE(sg.midterm_score,    0) * COALESCE(w.midterm_weight,    30) / 100 +
+                COALESCE(sg.final_score,      0) * COALESCE(w.final_weight,      40) / 100 +
+                COALESCE(sg.assignment_score, 0) * COALESCE(w.assignment_weight, 20) / 100
+            ), 1)                                                                   AS minScore
+        FROM subjects sub
+        LEFT JOIN subject_grade_weights w  ON w.subject_id  = sub.id
+        LEFT JOIN subject_grades        sg ON sg.subject_id = sub.id
+        GROUP BY sub.id, sub.subject, sub.department, sub.professor
+        ORDER BY sub.department, sub.subject
+    </select>
+
+
+    <select id="getGradeInputStatus" resultType="GradeInputStatusDTO">
+        SELECT
+            sub.id,
+            sub.subject,
+            sub.department,
+            sub.professor,
+            COUNT(DISTINCT st.id)          AS totalStudents,
+            COUNT(DISTINCT sg.student_id)  AS gradedStudents,
+            COUNT(DISTINCT st.id) - COUNT(DISTINCT sg.student_id) AS ungradedStudents
+        FROM subjects sub
+        LEFT JOIN students      st ON st.department = sub.department
+        LEFT JOIN subject_grades sg ON sg.subject_id = sub.id
+        GROUP BY sub.id, sub.subject, sub.department, sub.professor
+        ORDER BY ungradedStudents DESC, sub.department
+    </select>
+
+</mapper>

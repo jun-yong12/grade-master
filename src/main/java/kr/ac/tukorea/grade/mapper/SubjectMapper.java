@@ -9,4 +9,7 @@ import java.util.List;
 public interface SubjectMapper {
     List<SubjectDTO> findAll();
     SubjectDTO findById(Long id);
+    void insert(SubjectDTO subject);
+    void update(SubjectDTO subject);
+    void deleteById(Long id);
 }

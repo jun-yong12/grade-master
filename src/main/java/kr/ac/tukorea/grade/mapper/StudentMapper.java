@@ -11,6 +11,8 @@ import java.util.List;
 public interface StudentMapper {
 
     List<StudentDTO> findAll(@Param("page") PageDTO page);
+    List<StudentDTO> findAllNoLimit(@Param("page") PageDTO page);
+    List<String> findDistinctDepartments();
 
     long countAll(@Param("page") PageDTO page);
 

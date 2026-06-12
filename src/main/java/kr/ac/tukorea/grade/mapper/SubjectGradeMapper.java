@@ -19,4 +19,7 @@ public interface SubjectGradeMapper {
 
     List<SubjectGradeRowDTO> findGradesBySubject(@Param("subjectId") Long subjectId);
     void saveOrUpdateGrade(@Param("subjectId") Long subjectId, @Param("entry") SubjectGradeEntryDTO entry);
+    void deleteBySubjectId(@Param("subjectId") Long subjectId);
+    void deleteWeightsBySubjectId(@Param("subjectId") Long subjectId);
+    void deleteRatiosBySubjectId(@Param("subjectId") Long subjectId);
 }

@@ -41,7 +41,7 @@ public class WebConfig implements WebMvcConfigurer {
 
         // 로그인 체크 인터셉터 (보호 경로)
         registry.addInterceptor(new LoginInterceptor())
-                .addPathPatterns("/students/**", "/grades/**")
+                .addPathPatterns("/students/**", "/grades/**", "/dashboard/**", "/subjects/**")
                 .excludePathPatterns("/login", "/logout", "/css/**", "/js/**");
     }
 }

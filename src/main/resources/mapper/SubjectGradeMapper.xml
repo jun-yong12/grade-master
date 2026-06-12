@@ -63,4 +63,17 @@
             assignment_score = #{entry.assignmentScore}
     </insert>
 
+
+    <delete id="deleteBySubjectId">
+        DELETE FROM subject_grades WHERE subject_id = #{subjectId}
+    </delete>
+
+    <delete id="deleteWeightsBySubjectId">
+        DELETE FROM subject_grade_weights WHERE subject_id = #{subjectId}
+    </delete>
+
+    <delete id="deleteRatiosBySubjectId">
+        DELETE FROM subject_grade_ratios WHERE subject_id = #{subjectId}
+    </delete>
+
 </mapper>

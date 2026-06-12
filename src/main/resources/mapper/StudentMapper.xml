@@ -17,7 +17,7 @@
         <result property="average"       column="average"/>
     </resultMap>
 
-    <!-- 검색 조건 -->
+    <!-- 검색/필터 조건 -->
     <sql id="searchCondition">
         <if test="page.keyword != null and page.keyword != ''">
             <choose>
@@ -28,6 +28,15 @@
                     AND s.name LIKE CONCAT('%', #{page.keyword}, '%')
                 </otherwise>
             </choose>
+        </if>
+        <if test="page.filterDept != null and page.filterDept != ''">
+            AND s.department = #{page.filterDept}
+        </if>
+        <if test="page.filterGrade != null and page.filterGrade != ''">
+            AND s.grade = #{page.filterGrade}
+        </if>
+        <if test="page.filterStatus != null and page.filterStatus != ''">
+            AND s.status = #{page.filterStatus}
         </if>
     </sql>
 
@@ -72,6 +81,31 @@
     <!-- 과별 학생 목록 -->
     <select id="findByDepartment" resultMap="StudentResultMap">
         SELECT * FROM students WHERE department = #{department} ORDER BY student_number
+    </select>
+
+    <!-- 필터 적용 전체 조회 (엑셀 내보내기용, 페이징 없음) -->
+    <select id="findAllNoLimit" resultMap="StudentResultMap">
+        SELECT s.*, ROUND(AVG(g.score), 1) AS average
+        FROM students s
+        LEFT JOIN grades g ON s.id = g.student_id
+        WHERE 1=1
+        <include refid="searchCondition"/>
+        GROUP BY s.id
+        ORDER BY
+        <choose>
+            <when test="page.sortField == 'name'">s.name</when>
+            <when test="page.sortField == 'average'">average</when>
+            <otherwise>s.student_number</otherwise>
+        </choose>
+        <choose>
+            <when test="page.sortDir == 'DESC'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 학과 목록 (필터 드롭다운용) -->
+    <select id="findDistinctDepartments" resultType="string">
+        SELECT DISTINCT department FROM students WHERE department IS NOT NULL ORDER BY department
     </select>
 
     <!-- 학번으로 조회 -->

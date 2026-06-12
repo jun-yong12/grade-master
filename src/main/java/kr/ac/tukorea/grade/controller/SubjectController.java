@@ -1,5 +1,6 @@
 package kr.ac.tukorea.grade.controller;
 
+import kr.ac.tukorea.grade.dto.SubjectDTO;
 import kr.ac.tukorea.grade.dto.SubjectGradeEntryDTO;
 import kr.ac.tukorea.grade.dto.SubjectGradeRatioDTO;
 import kr.ac.tukorea.grade.dto.SubjectGradeWeightDTO;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,31 @@ public class SubjectController {
     public String list(Model model) {
         model.addAttribute("subjects", subjectMapper.findAll());
         return "subject/list";
+    }
+
+    @PostMapping
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> create(@RequestBody SubjectDTO subject) {
+        subjectMapper.insert(subject);
+        return ResponseEntity.ok(Map.of("success", true, "id", subject.getId()));
+    }
+
+    @PostMapping("/{id}/update")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody SubjectDTO subject) {
+        subject.setId(id);
+        subjectMapper.update(subject);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+        subjectGradeMapper.deleteBySubjectId(id);
+        subjectGradeMapper.deleteWeightsBySubjectId(id);
+        subjectGradeMapper.deleteRatiosBySubjectId(id);
+        subjectMapper.deleteById(id);
+        ra.addFlashAttribute("success", "과목이 삭제되었습니다.");
+        return "redirect:/subjects";
     }
 
     @GetMapping("/{id}")
