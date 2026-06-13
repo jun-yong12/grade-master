@@ -22,4 +22,19 @@
         ORDER BY s.id
     </select>
 
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO subjects (subject, department, professor)
+        VALUES (#{subject}, #{department}, #{professor})
+    </insert>
+
+    <update id="update">
+        UPDATE subjects SET subject=#{subject}, department=#{department}, professor=#{professor}
+        WHERE id=#{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM subjects WHERE id=#{id}
+    </delete>
+
 </mapper>

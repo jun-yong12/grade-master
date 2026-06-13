@@ -72,4 +72,21 @@
         ORDER BY sub.department, sub.subject
     </select>
 
+
+    <select id="getGradeInputStatus" resultType="GradeInputStatusDTO">
+        SELECT
+            sub.id,
+            sub.subject,
+            sub.department,
+            sub.professor,
+            COUNT(DISTINCT st.id)          AS totalStudents,
+            COUNT(DISTINCT sg.student_id)  AS gradedStudents,
+            COUNT(DISTINCT st.id) - COUNT(DISTINCT sg.student_id) AS ungradedStudents
+        FROM subjects sub
+        LEFT JOIN students      st ON st.department = sub.department
+        LEFT JOIN subject_grades sg ON sg.subject_id = sub.id
+        GROUP BY sub.id, sub.subject, sub.department, sub.professor
+        ORDER BY ungradedStudents DESC, sub.department
+    </select>
+
 </mapper>

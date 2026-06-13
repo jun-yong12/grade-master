@@ -34,7 +34,8 @@
                 <td th:text="${s.studentCount} + '명'"></td>
                 <td class="actions">
                     <button type="button" class="btn btn-sm btn-warning"
-                            th:onclick="'openSubjectModal(' + ${s.id} + ',\'' + ${s.subject} + '\',\'' + ${s.department} + '\',\'' + ${s.professor} + '\')'">수정</button>
+                            th:attr="data-id=${s.id},data-subject=${s.subject},data-department=${s.department},data-professor=${s.professor}"
+                            onclick="openSubjectModal(+this.dataset.id, this.dataset.subject, this.dataset.department, this.dataset.professor)">수정</button>
                     <form th:action="@{/subjects/{id}/delete(id=${s.id})}" method="post" style="display:inline"
                           onsubmit="return confirm('과목을 삭제하면 관련 성적 데이터도 모두 삭제됩니다. 계속하시겠습니까?')">
                         <button type="submit" class="btn btn-sm btn-danger">삭제</button>

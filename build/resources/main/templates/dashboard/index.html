@@ -38,6 +38,7 @@
     <div class="tab-nav">
         <button class="tab-btn active" onclick="showTab('dept', this)">학과 현황</button>
         <button class="tab-btn"        onclick="showTab('grades', this)">성적 통계</button>
+        <button class="tab-btn"        onclick="showTab('status', this)">성적 입력 현황</button>
     </div>
 
     <!-- 탭 1: 학과 현황 -->
@@ -154,6 +155,54 @@
                 </tr>
                 <tr th:if="${#lists.isEmpty(subjectStats)}">
                     <td colspan="8" class="empty-msg">등록된 과목이 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- 탭 3: 성적 입력 현황 -->
+    <div id="tab-status" class="tab-panel">
+        <div class="card">
+            <h3>과목별 성적 입력 현황</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>과목명</th>
+                    <th>학과</th>
+                    <th>교수</th>
+                    <th>전체 학생</th>
+                    <th>입력 완료</th>
+                    <th>미입력</th>
+                    <th>입력률</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${gradeStatus}">
+                    <td><a th:href="@{/subjects/{id}(id=${s.id})}" class="student-link" th:text="${s.subject}"></a></td>
+                    <td th:text="${s.department}"></td>
+                    <td th:text="${s.professor}"></td>
+                    <td th:text="${s.totalStudents} + '명'"></td>
+                    <td>
+                        <span class="badge badge-a" th:if="${s.gradedStudents > 0}" th:text="${s.gradedStudents} + '명'"></span>
+                        <span style="color:#a0aec0" th:if="${s.gradedStudents == 0}">0명</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-f" th:if="${s.ungradedStudents > 0}" th:text="${s.ungradedStudents} + '명'"></span>
+                        <span style="color:#38a169;font-weight:600" th:if="${s.ungradedStudents == 0}">완료</span>
+                    </td>
+                    <td style="min-width:140px">
+                        <div th:if="${s.totalStudents > 0}" style="display:flex;align-items:center;gap:8px">
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill"
+                                     th:style="'width:' + ${#numbers.formatDecimal(s.gradedStudents * 100.0 / s.totalStudents, 1, 1)} + '%'"></div>
+                            </div>
+                            <span style="font-size:.82rem;color:#718096;white-space:nowrap"
+                                  th:text="${#numbers.formatDecimal(s.gradedStudents * 100.0 / s.totalStudents, 1, 1)} + '%'"></span>
+                        </div>
+                        <span th:if="${s.totalStudents == 0}" style="color:#a0aec0">-</span>
+                    </td>
                 </tr>
                 </tbody>
             </table>

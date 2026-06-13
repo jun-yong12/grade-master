@@ -17,6 +17,7 @@ a { text-decoration: none; color: inherit; }
 .nav-link { color: rgba(255,255,255,.85); font-size: .9rem; padding: 10px 12px;
             border-radius: 8px; display: block; }
 .nav-link:hover { background: rgba(255,255,255,.15); color: white; }
+.nav-link.active { background: rgba(255,255,255,.25); color: white; font-weight: 600; }
 .logout-btn { background: rgba(255,255,255,.2); }
 .lang-btn { font-size: .8rem; }
 

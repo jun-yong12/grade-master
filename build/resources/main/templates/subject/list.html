@@ -5,8 +5,11 @@
 <aside th:replace="~{fragments/layout :: sidebar}"></aside>
 
 <div class="container">
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
     <div class="toolbar">
         <h2>담당 과목</h2>
+        <button type="button" class="btn btn-primary" onclick="openSubjectModal()">+ 과목 등록</button>
     </div>
 
     <div class="card">
@@ -14,24 +17,94 @@
             <thead>
             <tr>
                 <th>담당 과목</th>
-                <th>과</th>
+                <th>학과</th>
                 <th>교수님 성함</th>
                 <th>수강 인원</th>
+                <th>관리</th>
             </tr>
             </thead>
             <tbody>
             <tr th:if="${#lists.isEmpty(subjects)}">
-                <td colspan="4" class="empty-msg">등록된 과목이 없습니다.</td>
+                <td colspan="5" class="empty-msg">등록된 과목이 없습니다.</td>
             </tr>
             <tr th:each="s : ${subjects}">
                 <td><a th:href="@{/subjects/{id}(id=${s.id})}" th:text="${s.subject}" class="student-link"></a></td>
                 <td th:text="${s.department}"></td>
                 <td th:text="${s.professor}"></td>
                 <td th:text="${s.studentCount} + '명'"></td>
+                <td class="actions">
+                    <button type="button" class="btn btn-sm btn-warning"
+                            th:attr="data-id=${s.id},data-subject=${s.subject},data-department=${s.department},data-professor=${s.professor}"
+                            onclick="openSubjectModal(+this.dataset.id, this.dataset.subject, this.dataset.department, this.dataset.professor)">수정</button>
+                    <form th:action="@{/subjects/{id}/delete(id=${s.id})}" method="post" style="display:inline"
+                          onsubmit="return confirm('과목을 삭제하면 관련 성적 데이터도 모두 삭제됩니다. 계속하시겠습니까?')">
+                        <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                    </form>
+                </td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- 과목 등록/수정 모달 -->
+<div id="subjectModal" class="modal-overlay" onclick="closeSubjectModal(event)">
+    <div class="modal-dialog" style="max-width:440px">
+        <div class="modal-header">
+            <h3 id="subjectModalTitle">과목 등록</h3>
+            <button type="button" class="modal-close" onclick="closeSubjectModal()">✕</button>
+        </div>
+        <form id="subjectModalForm" class="form" onsubmit="submitSubjectForm(event)">
+            <input type="hidden" id="subjectId" value=""/>
+            <div class="form-group">
+                <label>과목명 <span class="required">*</span></label>
+                <input type="text" id="f-subject" placeholder="예: 자료구조" class="form-input" required/>
+            </div>
+            <div class="form-group">
+                <label>학과 <span class="required">*</span></label>
+                <input type="text" id="f-department" placeholder="예: 컴퓨터공학과" class="form-input" required/>
+            </div>
+            <div class="form-group">
+                <label>교수 <span class="required">*</span></label>
+                <input type="text" id="f-professor" placeholder="예: 김철수" class="form-input" required/>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeSubjectModal()">취소</button>
+                <button type="submit" class="btn btn-primary" id="subjectSubmitBtn">등록하기</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openSubjectModal(id, subject, department, professor) {
+    const isEdit = !!id;
+    document.getElementById('subjectModalTitle').textContent = isEdit ? '과목 수정' : '과목 등록';
+    document.getElementById('subjectSubmitBtn').textContent  = isEdit ? '수정하기' : '등록하기';
+    document.getElementById('subjectId').value       = id || '';
+    document.getElementById('f-subject').value       = subject    || '';
+    document.getElementById('f-department').value    = department || '';
+    document.getElementById('f-professor').value     = professor  || '';
+    document.getElementById('subjectModal').classList.add('active');
+}
+function closeSubjectModal(event) {
+    if (event && event.target !== document.getElementById('subjectModal')) return;
+    document.getElementById('subjectModal').classList.remove('active');
+}
+async function submitSubjectForm(event) {
+    event.preventDefault();
+    const id   = document.getElementById('subjectId').value;
+    const body = {
+        subject:    document.getElementById('f-subject').value.trim(),
+        department: document.getElementById('f-department').value.trim(),
+        professor:  document.getElementById('f-professor').value.trim(),
+    };
+    const url    = id ? '/subjects/' + id + '/update' : '/subjects';
+    const res    = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const json   = await res.json();
+    if (json.success) location.reload();
+    else alert('저장 중 오류가 발생했습니다.');
+}
+</script>
 </body>
 </html>

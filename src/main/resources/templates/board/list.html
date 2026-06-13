@@ -79,7 +79,8 @@
                 </td>
                 <td class="actions">
                     <button type="button" class="btn btn-sm btn-info"
-                            th:onclick="'openGradeModal(' + ${s.id} + ', \'' + ${s.name} + '\')'">성적</button>
+                            th:attr="data-id=${s.id},data-name=${s.name}"
+                            onclick="openGradeModal(+this.dataset.id, this.dataset.name)">성적</button>
                     <a th:href="@{/students/{id}/edit(id=${s.id})}" class="btn btn-sm btn-warning">수정</a>
                     <form th:action="@{/students/{id}/delete(id=${s.id})}" method="post" style="display:inline"
                           onsubmit="return confirm('정말 삭제하시겠습니까?')">
